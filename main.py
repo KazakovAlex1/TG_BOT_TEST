@@ -3,37 +3,21 @@ import asyncio
 
 from aiogram import Dispatcher, Bot
 from aiogram.filters import Command
-from aiogram.types import Message
 
 from config import config
+from states import WeatherStates
+from hendlers.comands import start_cmd, help_cmd, weather_cmd, process_weather_city
+
 
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(config.BOT_TOKEN)
 dp = Dispatcher()
 
-@dp.message(Command('start'))
-async def start_cmd(message : Message):
-    logging.info(f'Пользователь {message.from_user.first_name} вызвал команду /start')
-
-    await message.answer('Привет я утилитарный бот!')
-
-@dp.message(Command('weather'))
-async def weather_cmd(message : Message):
-    logging.info(f'Пользователь {message.from_user.first_name} вызвал команду /weather')
-
-    await message.answer('Функция погода в разработке. Скоро будет доступна!')
-
-@dp.message(Command('help'))
-async def help_cmd(message : Message):
-    logging.info(f'Пользователь {message.from_user.first_name} вызвал команду /help')
-
-    await message.answer('Доступные команды:\n'
-                         '/start - Начать работу\n' \
-                         '/help - Список доступных команд\n' \
-                         '/weather - Узнать погоду\n' \
-                         '/convert - Конвертировать валюту\n' \
-                         '/todo - Список дел')
+dp.message.register(start_cmd, Command('start'))
+dp.message.register(help_cmd, Command('help'))
+dp.message.register(weather_cmd, Command('weather'))
+dp.message.register(process_weather_city, WeatherStates.waiting_city)
 
 
 async def main():
