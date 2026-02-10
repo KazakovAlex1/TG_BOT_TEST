@@ -4,8 +4,6 @@ import logging
 from config import config
 
 
-logging.basicConfig(level=logging.INFO)
-
 async def get_weather(city : str) -> str:
     """
     Получает погоду для города через OpenWeatherMap API.
@@ -59,8 +57,8 @@ async def get_weather(city : str) -> str:
 
 
 def format_weather_response(data : dict) -> str:
+    """Форматирует ответ API в читаемый текст."""
     try:
-        """Форматирует ответ API в читаемый текст."""
         city = data['name']
         temp = data['main']['temp']
         feels_like = data['main']['feels_like']
