@@ -5,6 +5,7 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
 from states import WeatherStates
+from utils.weather import get_weather
 
 
 async def start_cmd(message : Message):
@@ -21,12 +22,17 @@ async def weather_cmd(message : Message, state : FSMContext):
 async def process_weather_city(message : Message, state : FSMContext):
     """Обработка города"""
     city = message.text.strip()
+    user = message.from_user
 
-    logging.info(f'Город {city} от {message.from_user.first_name}.')
+    logging.info(f'Город {city} от {user.first_name}.')
+
+    await message.bot.send_chat_action(message.chat.id, 'typing')
+
+    weather_result = await get_weather(city)
 
     await state.clear()
     
-    await message.answer(f'Город {city}: (в разработке)')
+    await message.answer(weather_result)
 
 
 async def help_cmd(message : Message):

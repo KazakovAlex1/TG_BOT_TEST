@@ -16,8 +16,8 @@ class Config:
     """Конфигурация приложения. Загружает настройки из .env файла."""
 
     BOT_TOKEN : str = ''
-    WEATHER_API_KEY : str = ''
-    CURRENCY_API_URL : str = 'https://www.cbr-xml-daily.ru/daily_json.js'
+    WEATHER_API_KEY : str = 'a1875c4bf8792e2e0f99c731f40cf99d'
+    CURRENCY_API_URL : str = ''
 
     def __post_init__(self):
         if not self.BOT_TOKEN:

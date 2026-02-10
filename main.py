@@ -26,7 +26,7 @@ async def main():
         return
     
     logging.info('Запуск бота...')
-    await dp.start_polling(bot)
+    await dp.start_polling(bot, allowed_updates=[])
 
 if __name__ == '__main__':
     asyncio.run(main())
