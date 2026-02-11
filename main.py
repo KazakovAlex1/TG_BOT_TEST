@@ -4,6 +4,7 @@ import asyncio
 from aiogram import Dispatcher, Bot, F
 from aiogram.filters import Command
 
+from special_scripts import clear_cache
 from config import config
 from states import WeatherStates, ConvertStates
 from hendlers.comands import start_cmd, help_cmd, weather_cmd, process_weather_city, cancel_fsm, convert_cmd, process_convert_amount, process_convert_from, process_convert_to
@@ -37,4 +38,5 @@ async def main():
     await dp.start_polling(bot)
 
 if __name__ == '__main__':
+    clear_cache()
     asyncio.run(main())
