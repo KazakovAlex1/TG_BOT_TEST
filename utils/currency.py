@@ -8,9 +8,6 @@ async def convert_currency(amount : float, for_curr : str, to_curr : str) -> str
     if not config.CURRENCY_API_URL:
         return 'Сервис конвертации сейчас не доступен! Попробуйте позже.'
     
-    if amount <= 0:
-        return '❌ Сумма должна быть больше нуля!'
-    
     for_curr = for_curr.upper()
     to_curr = to_curr.upper()
     
