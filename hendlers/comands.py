@@ -1,12 +1,12 @@
 import logging
 
-from aiogram.filters import Command
+
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from states import WeatherStates, ConvertStates
 from utils.weather import get_weather
-from keyboards import get_cancel_keyboard
+from keyboards import get_cancel_keyboard, get_popular_currencies_keyboard
 from utils.currency import convert_currency
 
 
@@ -76,29 +76,71 @@ async def process_convert_amount(message : Message, state : FSMContext):
             
         await state.update_data(amount=amount)
         await state.set_state(ConvertStates.waiting_from_curr)
-        await message.answer('💰 Из какой валюты? (например: USD, EUR, RUB)', reply_markup=get_cancel_keyboard())
+        await message.answer('💵 Из какой валюты? (например: USD, EUR, RUB)', reply_markup=get_popular_currencies_keyboard())
 
     except ValueError:
         await message.answer('❌ Пожалуйста, введите число:')
     
 
+async def  handle_currency_selected(
+        currency : str,
+        state : FSMContext,
+        bot,
+        chat_id : int,
+        message_id : int = None
+):
+    """ Общая логика обработки выбранной валюты.
+    Вызывается и из текстового ввода, и из callback."""
+    current_state = await state.get_state()
+
+    if current_state == ConvertStates.waiting_from_curr:
+        await state.update_data(from_curr=currency)
+        await state.set_state(ConvertStates.waiting_to_curr)
+
+        if message_id:
+            await bot.edit_message_text(
+                f'✅ Исходная валюта: {currency}\n\n💰 Теперь выберите целевую валюту:',
+                chat_id=chat_id,
+                message_id=message_id
+            )
+        
+        await bot.send_message(chat_id, '💰 Выберите целевую валюту или введите код вручную:', reply_markup=get_popular_currencies_keyboard())
+    
+    elif current_state == ConvertStates.waiting_to_curr:
+        data = await state.get_data()
+        amount = data.get('amount')
+        from_curr = data.get('from_curr')
+
+        await bot.send_chat_action(chat_id, 'typing')
+        result = await convert_currency(amount, from_curr, currency)
+        await state.clear()
+
+        if message_id:
+            await bot.edit_message_text(f'✅ Целевая валюта: {currency}\n\n{result}', chat_id=chat_id, message_id=message_id)
+        else:
+            await bot.send_message(chat_id, result)
+
 async def process_convert_from(message : Message, state : FSMContext):
     currency = message.text.strip().upper()
 
-    await state.update_data(for_cur=currency)
-    await state.set_state(ConvertStates.waiting_to_curr)
-    await message.answer('💰 В какую валюту конвертировать? (например: USD, EUR, RUB)', reply_markup=get_cancel_keyboard())
+    await handle_currency_selected(
+        currency=currency, 
+        state=state, 
+        bot = message.bot,
+        chat_id=message.chat.id
+    )
 
 
-async def process_convert_to(message : Message, state : FSMContext):
-    to_curr = message.text.strip().upper()
+async def process_currency_callback(callback : CallbackQuery, state : FSMContext):
+    """Обработка нажатия на кнопку с валютой."""
+    currency = callback.data.replace('currency_', '')
 
-    await message.bot.send_chat_action(message.chat.id, 'typing')
+    await handle_currency_selected(
+        currency=currency,
+        state=state,
+        bot=callback.bot,
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.message_id
+    )
 
-    data = await state.get_data()
-    amount = data.get('amount')
-    from_curr = data.get('for_cur')
-
-    result = await convert_currency(amount, from_curr, to_curr)
-    await state.clear()
-    await message.answer(result)
+    await callback.answer()

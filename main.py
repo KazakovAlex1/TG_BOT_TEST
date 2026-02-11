@@ -7,7 +7,7 @@ from aiogram.filters import Command
 from special_scripts import clear_cache
 from config import config
 from states import WeatherStates, ConvertStates
-from hendlers.comands import start_cmd, help_cmd, weather_cmd, process_weather_city, cancel_fsm, convert_cmd, process_convert_amount, process_convert_from, process_convert_to
+from hendlers.comands import start_cmd, help_cmd, weather_cmd, process_weather_city, cancel_fsm, convert_cmd, process_convert_amount, process_convert_from, process_currency_callback
 
 
 
@@ -24,8 +24,8 @@ dp.message.register(process_weather_city, WeatherStates.waiting_city)
 dp.message.register(convert_cmd, Command('convert'))
 dp.message.register(process_convert_amount, ConvertStates.waiting_summ)
 dp.message.register(process_convert_from, ConvertStates.waiting_from_curr)
-dp.message.register(process_convert_to, ConvertStates.waiting_to_curr)
 
+dp.callback_query.register(process_currency_callback, F.data.startswith('currency_'))
 dp.callback_query.register(cancel_fsm, F.data == 'cancel_fsm')
 
 
