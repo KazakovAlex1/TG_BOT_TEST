@@ -10,3 +10,8 @@ class ConvertStates(StatesGroup):
     waiting_summ = State()
     waiting_from_curr = State()
     waiting_to_curr = State()
+
+
+class TodoStates(StatesGroup):
+    """Состояние для списка дел"""
+    waiting_task = State()

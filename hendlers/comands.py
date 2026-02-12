@@ -4,10 +4,11 @@ import logging
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from states import WeatherStates, ConvertStates
+from states import WeatherStates, ConvertStates, TodoStates
 from utils.weather import get_weather
-from keyboards import get_cancel_keyboard, get_popular_currencies_keyboard
+from keyboards import get_cancel_keyboard, get_popular_currencies_keyboard, get_todo_keyboard, get_tasks_keyboard
 from utils.currency import convert_currency
+from database import Database
 
 
 async def start_cmd(message : Message):
@@ -143,4 +144,119 @@ async def process_currency_callback(callback : CallbackQuery, state : FSMContext
         message_id=callback.message.message_id
     )
 
+    await callback.answer()
+
+async def todo_cmd(message : Message, state: FSMContext):
+    user = message.from_user
+
+    logging.info(f'Команда /todo от {user.first_name}')
+
+    await state.clear()
+
+    with Database() as db:
+
+        tasks = db.get_tasks(user.id)
+
+        if not tasks:
+            await message.answer('📋 У вас пока нет задач.\n\n'
+            'Нажмите «➕ Добавить задачу», чтобы создать первую!', reply_markup=get_todo_keyboard())
+            return
+        
+        task_lines = []
+        for i, (task_id, task_text, is_done) in enumerate(tasks, 1):
+            status = '✅' if is_done else '⬜'
+            task_lines.append(f'{i}. {status} {task_text}')
+        
+        tasks_text = '\n'.join(task_lines)
+
+        await message.answer(
+            f'📋 <b>Ваш список дел:</b>\n\n{tasks_text}',
+            parse_mode='HTML',
+            reply_markup=get_tasks_keyboard(tasks, user.id)
+        )
+
+
+async def todo_add_callback(callback : CallbackQuery, state : FSMContext):
+    """Начало добавления новой задачи."""
+    await callback.message.edit_text(
+        '✏️ Введите текст новой задачи:', reply_markup=get_cancel_keyboard()
+    )
+
+    await state.set_state(TodoStates.waiting_task)
+    await callback.answer()
+
+async def todo_process_task(message : Message, state : FSMContext):
+    """Сохранить новую задачу в БД."""
+    user = message.from_user
+    task_text = message.text.strip()
+
+    if not task_text:
+        await message.answer(
+            '❌ Задача не может быть пустой. Попробуйте снова:'
+        )
+        return
+    
+    if len(task_text) > 200:
+        await message.answer(
+            '❌ Слишком длинная задача. Максимум 200 символов:'
+        )
+        return
+    
+    with Database() as db:
+        task_id = db.add_task(user.id, task_text)
+
+    logging.info(f'TODO: пользователь {user.first_name} добавил задачу "{task_text[:30]}..." (id={task_id})')
+
+    await state.clear()
+
+    with Database() as db:
+        tasks = db.get_tasks(user.id)
+    
+    if tasks:
+        await message.answer(
+            '✅ Задача добавлена!', reply_markup=get_tasks_keyboard(tasks, user.id)
+        )
+    else:
+        await message.answer(
+            '❌ Задача не добавлена!', reply_markup=get_todo_keyboard()
+        )
+    
+
+async def todo_toggle_callback(callback : CallbackQuery):
+    task_id = int(callback.data.split('_')[2])
+    user = callback.from_user
+
+    with Database() as db:
+        db.toggle_task(task_id)
+        tasks = db.get_tasks(user.id)
+    
+    logging.info(f'TODO: пользователь {user.first_name} переключил задачу {task_id}')
+
+    await callback.message.edit_text(
+        f'📋 <b>Ваш список дел:</b>',
+        parse_mode='HTML',
+        reply_markup=get_tasks_keyboard(tasks, user.id)
+    )
+
+    await callback.answer()
+
+
+async def todo_clear_callback(callback : CallbackQuery):
+    user = callback.from_user
+
+    with Database() as db:
+        db.delete_all_tasks(user.id)
+
+    logging.info(f'TODO: пользователь {user.first_name} очистил все задачи')
+
+    await callback.message.edit_text(
+        '🗑 Все задачи удалены!\n\n'
+        'Нажмите «➕ Добавить задачу», чтобы создать новую.',
+        reply_markup=get_todo_keyboard()
+    )
+    await callback.answer()
+
+async def todo_close_calback(callback : CallbackQuery, state : FSMContext):
+    await state.clear()
+    await callback.message.edit_text('📋 Список дел закрыт.')
     await callback.answer()
