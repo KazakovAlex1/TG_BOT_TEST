@@ -12,9 +12,44 @@ from database import Database
 
 
 async def start_cmd(message : Message):
-    logging.info(f'Пользователь {message.from_user.first_name} вызвал команду /start')
+    user = message.from_user
 
-    await message.answer('Привет я утилитарный бот!')
+    logging.info(f'Пользователь {user.first_name} вызвал команду /start')
+
+    await message.answer(
+        f"👋 Привет, {user.first_name}!\n\n"
+        "Я Telegram Utility Bot — твой помощник для повседневных задач.\n\n"
+        " Доступные команды:\n"
+        " 🌤 /weather — узнать погоду в любом городе\n"
+        " 💰 /convert — конвертировать валюту\n"
+        " 📋 /todo — вести список дел \n"
+        " ℹ️ /info - информация"
+    )
+
+async def info_cmd(message : Message):
+    user = message.from_user
+
+    logging.info(f'{user.first_name} вызвал команду /info.')
+
+    await message.answer(
+        'Telegram Utility Bot — это виртуальный помощник, созданный для решения повседневных задач прямо в Telegram.\n\n'
+
+        'Проект разрабатывался как учебный, но дорос до полноценного инструмента, которым можно пользоваться каждый день.\n\n'
+
+        '❓ ЧТО УМЕЕТ БОТ\n\n'
+
+        '🌤 Погода:\nДанные предоставляются OpenWeatherMap. Просто введите город — и получите актуальную температуру, влажность и скорость ветра.\n\n'
+
+        '💰 Конвертер валют:\nОфициальные курсы Центрального банка РФ. Поддерживаются все основные валюты, а самые популярные вынесены в удобные кнопки с флагами.\n\n'
+
+        '📋 Список дел:\nВаши задачи сохраняются в базе данных и не пропадают даже после перезапуска бота. Можно отмечать выполненное и очищать список.\n\n'
+
+
+        '🛠 Технологии:\n'
+        'Python + aiogram\n'
+        'SQLite для хранения задач\n'
+        'OpenWeatherMap API и API Центробанка РФ'
+    )
 
 async def weather_cmd(message : Message, state : FSMContext):
     logging.info(f'Пользователь {message.from_user.first_name} вызвал команду /weather')
@@ -44,20 +79,7 @@ async def cancel_fsm(calback : CallbackQuery, state : FSMContext):
     await calback.message.edit_text('❌ Действие отменено')
     await calback.answer()
 
-
-async def help_cmd(message : Message):
-    logging.info(f'Пользователь {message.from_user.first_name} вызвал команду /help')
-
-    await message.answer(
-        "Доступные команды:\n"
-        "/start - Начать работу\n"
-        "/help - Помощь\n"
-        "/weather - Узнать погоду\n"
-        "/convert - Конвертировать валюту\n"
-        "/todo - Список дел"
-    )
-
-
+    
 async def convert_cmd(message : Message, state : FSMContext):
     """Начало диалога конвертации - запрос суммы."""
     logging.info(f'Пользователь {message.from_user.first_name} вызвал команду /convert')
