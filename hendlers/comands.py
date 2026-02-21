@@ -1,4 +1,5 @@
 import logging
+import random
 
 
 from aiogram.types import Message, CallbackQuery
@@ -9,6 +10,7 @@ from utils.weather import get_weather
 from keyboards import get_cancel_keyboard, get_popular_currencies_keyboard, get_todo_keyboard, get_tasks_keyboard
 from utils.currency import convert_currency
 from database import Database
+from list_facts import RANDOM_FACTS
 
 
 async def start_cmd(message : Message):
@@ -23,8 +25,19 @@ async def start_cmd(message : Message):
         " 🌤 /weather — узнать погоду в любом городе\n"
         " 💰 /convert — конвертировать валюту\n"
         " 📋 /todo — вести список дел \n"
-        " ℹ️ /info - информация"
+        " ℹ️ /info - информация\n"
+        " ❓ /fact - Случайный факт"
     )
+
+
+async def fact_cmd(message : Message):
+    user = message.from_user
+    logging.info(f'Пользователь {user} вызвал команду /fact')
+
+    fact = random.choice(RANDOM_FACTS)
+
+    await message.answer(fact)
+
 
 async def info_cmd(message : Message):
     user = message.from_user
@@ -251,11 +264,18 @@ async def todo_toggle_callback(callback : CallbackQuery):
     with Database() as db:
         db.toggle_task(task_id)
         tasks = db.get_tasks(user.id)
+
+        tasks_lines = []
+        for i, (task_id, task_text, is_done) in enumerate(tasks, 1):
+            status = '✅' if is_done else '⬜'
+            tasks_lines.append(f'{i}. {status} {task_text}')
+        
+        tasks_list = '\n'.join(tasks_lines)
     
     logging.info(f'TODO: пользователь {user.first_name} переключил задачу {task_id}')
 
     await callback.message.edit_text(
-        f'📋 <b>Ваш список дел:</b>',
+        f'📋 <b>Ваш список дел:</b>\n\n{tasks_list}',
         parse_mode='HTML',
         reply_markup=get_tasks_keyboard(tasks, user.id)
     )

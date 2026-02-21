@@ -13,6 +13,7 @@ from hendlers.comands import(
     process_convert_from, process_currency_callback,
     todo_cmd, todo_add_callback, todo_clear_callback,
     todo_close_calback, todo_process_task, todo_toggle_callback,
+    fact_cmd,
 )
 
 
@@ -23,6 +24,7 @@ dp = Dispatcher()
 
 dp.message.register(start_cmd, Command('start'))
 dp.message.register(info_cmd, Command('info'))
+dp.message.register(fact_cmd, Command('fact'))
 
 dp.message.register(weather_cmd, Command('weather'))
 dp.message.register(process_weather_city, WeatherStates.waiting_city)
