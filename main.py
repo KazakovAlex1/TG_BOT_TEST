@@ -15,6 +15,9 @@ from hendlers.comands import(
     todo_close_calback, todo_process_task, todo_toggle_callback,
     fact_cmd,
 )
+from keep_alive import keep_alive
+
+keep_alive()
 
 
 logging.basicConfig(level=logging.INFO)
